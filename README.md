@@ -261,7 +261,7 @@ La IA propone conceptos técnicos, herramientas, métodos, idiomas y formación 
 
 Se guardan conceptos y evidencias breves, modelo, fechas, versión de condiciones y huella SHA-256 del archivo. El borrador caduca a los 30 minutos y se purga en el siguiente acceso a la cuenta. Se conservan registros de aceptación y eventos sin el CV. Mi cuenta permite actualizar el CV o eliminar los conceptos y su afinidad; tras eliminarlos se solicita de nuevo completar el perfil. No borra ofertas guardadas, backups existentes ni solicitudes ya enviadas al proveedor.
 
-La API bloquea los datos de la aplicación con HTTP 428 hasta confirmar el CV. Cambiar resumeCompleted desde el cliente no permite saltarse el flujo. Los análisis se limitan a cinco por usuario y hora y uno en curso.
+La API solicita subir un CV antes del primer acceso a los datos (HTTP 428). Una vez recibido, permite navegar mientras el análisis sigue en segundo plano; la afinidad del nuevo perfil no se calcula hasta confirmar sus conceptos. Cambiar resumeCompleted desde el cliente no permite saltarse el flujo. Los análisis se limitan a cinco por usuario y hora y uno en curso.
 
 Configuración opcional de OpenAI en .env, solo si seleccionas CV_AI_PROVIDER=openai (no usar variables VITE_):
 
@@ -274,7 +274,7 @@ PRIVACY_CONTACT=Contacto para privacidad
 
 En modo OpenAI se exige clave y saldo propios. En modo Ollama no se necesita una clave: se exige un servidor local y modelo descargado. Sin el proveedor disponible, el flujo muestra un estado pendiente y no simula IA. Reinicia el servidor después de configurarlo.
 
-Endpoints autenticados: GET /api/auth/cv/policy, POST /api/auth/cv/analyze, POST /api/auth/cv/confirm y DELETE /api/auth/cv.
+Endpoints autenticados: GET /api/auth/cv/policy, POST /api/auth/cv/analyze, POST /api/auth/cv/confirm, GET /api/auth/cv/status y DELETE /api/auth/cv.
 
 Las condiciones son un texto inicial para el proyecto educativo. La aceptación no exime de obligaciones legales: antes de publicar se debe completar la información del responsable, base jurídica, conservación, derechos y las condiciones del proveedor aplicables. Separar la lectura de condiciones y la autorización permite registrar ambas acciones de forma explícita. Consulta la [orientación de la AEPD sobre consentimiento e información](https://www.aepd.es/preguntas-frecuentes/2-tus-obligaciones-como-responsable-del-tratamiento/6-el-deber-de-informacion/FAQ-0248-sobre-si-el-usuario-tiene-que-dar-consentimiento-a-clausula-de-privacidad). OpenAI puede conservar registros de supervisión de abuso: store=false no implica retención cero; consulta sus [controles de datos](https://developers.openai.com/api/docs/guides/your-data).
 
@@ -303,3 +303,9 @@ Reinicia TalentScope. La pantalla de CV comprueba que Ollama responde y el model
 El modo local solo acepta URL HTTP en loopback y rechaza etiquetas cloud. En producción requiere Ollama en el mismo entorno de red del servidor Node; no accede al Ollama de cada visitante. El Dockerfile actual no incluye Ollama. Las pruebas verifican el contrato mediante respuestas controladas, no la calidad del modelo real ni el hardware del usuario.
 
 Prueba local realizada el 7 de octubre de 2026: Ollama con qwen2.5:3b devolvió cinco conceptos con evidencias de un texto breve en aproximadamente 13 segundos. El modelo se ejecutaba en CPU. Esta prueba no garantiza el tiempo de un CV completo. La respuesta local se limita a 2.500 tokens y se solicitan hasta 20 conceptos para reducir la latencia.
+
+### Análisis de CV en segundo plano
+
+POST /api/auth/cv/analyze devuelve HTTP 202 después de validar y leer el archivo, sin esperar la respuesta de la IA. La interfaz redirige al inicio y consulta el estado cada cinco segundos mientras el trabajo está en curso. Se distinguen estados processing, ready, failed y confirmed. Al terminar ofrece revisar el perfil; no aplica conceptos sin confirmación. Cambiar de página, recargar o cerrar el navegador no cancela el trabajo del servidor.
+
+El texto del CV se conserva solo en memoria durante el trabajo. El estado se guarda en SQLite. Si el servidor se reinicia se marca el trabajo como fallido y se solicita subir el CV de nuevo; no hay reanudación automática ni una cola distribuida. Si se elimina el perfil durante un análisis, su resultado tardío no restaura los datos borrados. Los borradores listos caducan a los 30 minutos.
