@@ -242,3 +242,7 @@ Antes de uso público amplio faltan verificación de email, recuperación de con
 - [Adzuna API](https://developer.adzuna.com/)
 - [LinkedIn — permisos](https://learn.microsoft.com/en-us/linkedin/shared/authentication/getting-access)
 - [LinkedIn — OIDC](https://learn.microsoft.com/en-us/linkedin/consumer/integrations/self-serve/sign-in-with-linkedin-v2)
+
+### Filtro de país y símbolos de empresa
+
+El buscador permite combinar país, ciudad, puesto y empresa. En los portales conectados se reconocen países y ciudades a partir de la ubicación publicada; las ofertas remotas sin país explícito quedan disponibles en «Todos los países». Adzuna usa el país de su catálogo. Los iconos de las empresas representan su actividad (infraestructura, monitorización y pagos); no son logotipos oficiales.
