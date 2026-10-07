@@ -298,6 +298,8 @@ OLLAMA_BASE_URL=http://127.0.0.1:11434
 OLLAMA_CV_MODEL=qwen2.5:3b
 ```
 
-Reinicia TalentScope. La pantalla de CV comprueba que Ollama responde y el modelo está descargado; «Comprobar configuración» actualiza el estado. El timeout de análisis local es de tres minutos y puede ser insuficiente en equipos lentos. Reduce la longitud del CV o usa un modelo apropiado a tu hardware.
+Reinicia TalentScope. La pantalla de CV comprueba que Ollama responde y el modelo está descargado; «Comprobar configuración» actualiza el estado. El timeout de análisis local es de cinco minutos y puede ser insuficiente en equipos lentos. Reduce la longitud del CV o usa un modelo apropiado a tu hardware.
 
 El modo local solo acepta URL HTTP en loopback y rechaza etiquetas cloud. En producción requiere Ollama en el mismo entorno de red del servidor Node; no accede al Ollama de cada visitante. El Dockerfile actual no incluye Ollama. Las pruebas verifican el contrato mediante respuestas controladas, no la calidad del modelo real ni el hardware del usuario.
+
+Prueba local realizada el 7 de octubre de 2026: Ollama con qwen2.5:3b devolvió cinco conceptos con evidencias de un texto breve en aproximadamente 13 segundos. El modelo se ejecutaba en CPU. Esta prueba no garantiza el tiempo de un CV completo. La respuesta local se limita a 2.500 tokens y se solicitan hasta 20 conceptos para reducir la latencia.
