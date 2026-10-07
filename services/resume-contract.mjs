@@ -1,4 +1,4 @@
-export const resumeTermsVersion='2026-10-07-v1';
+export const resumeTermsVersion='2026-10-07-v2';
 export const resumeTerms=[
  'Finalidad: extraer competencias profesionales de tu currículum y compararlas con requisitos de ofertas. No se utiliza para contratarte automáticamente ni se envía a empleadores.',
  'El archivo se procesa temporalmente en memoria. Su texto se envía a OpenAI para el análisis; se ocultan correos y algunos teléfonos, pero esto no garantiza anonimización. Evita incluir DNI, domicilio, datos de salud u otros datos sensibles.',
@@ -7,3 +7,5 @@ export const resumeTerms=[
  'La IA puede equivocarse. Debes revisar los conceptos antes de confirmarlos. La afinidad mide coincidencia de competencias con el puesto: no certifica experiencia, compatibilidad cultural ni probabilidad de contratación.',
  'No se garantiza exactitud completa de fuentes externas ni conseguir empleo. Estas condiciones no excluyen responsabilidades legales ni derechos que no pueden renunciarse. Antes de publicar el servicio, su titular debe completar la identidad y contacto del responsable y la política de privacidad.'
 ];
+
+export function resumeTermsFor(local){if(!local)return resumeTerms;return resumeTerms.map((term,i)=>i===1?'El archivo se procesa temporalmente en memoria. Su texto se analiza con un modelo local mediante Ollama en el mismo servidor de TalentScope. No se envía a OpenAI ni a una API de IA externa. Si TalentScope está desplegado, el servidor puede ser otro ordenador: local no significa necesariamente tu navegador. Evita datos personales que no sean necesarios.':i===2?'TalentScope guarda conceptos, evidencias breves, tu selección y el registro de aceptación. No guarda el archivo original ni el texto íntegro. Ollama utiliza los recursos del servidor y el modelo descargado; no hay tarifa por llamada a una API externa.':term);}

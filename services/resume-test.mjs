@@ -1,8 +1,14 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
 import {mkdtempSync,readdirSync} from 'node:fs';import {tmpdir} from 'node:os';import {join} from 'node:path';import {randomBytes} from 'node:crypto';
 import {zipSync,strToU8} from 'fflate';import {resumeTermsVersion} from './resume-contract.mjs';
-process.env.DATA_DIRECTORY=mkdtempSync(join(tmpdir(),'talentscope-resume-'));process.env.PORT_OFFSET='1700';process.env.INTERNAL_SECRET=randomBytes(32).toString('hex');
+process.env.DATA_DIRECTORY=mkdtempSync(join(tmpdir(),'talentscope-resume-'));process.env.PORT_OFFSET='1700';process.env.CV_AI_PROVIDER='openai';process.env.INTERNAL_SECRET=randomBytes(32).toString('hex');
 const {extractResume,validateCandidates}=await import('./resume.mjs');
+test('Ollama local: sin clave ni llamadas externas y con contrato compatible',async()=>{
+ const {analyzeResume,resumeSettings}=await import('./resume.mjs');const previous=process.env.CV_AI_PROVIDER;process.env.CV_AI_PROVIDER='ollama';
+ try{const result=await analyzeResume('Professional CV: React and SQL.',async(url,options)=>{assert.equal(url,'http://127.0.0.1:11434/v1/chat/completions');assert.equal(options.headers.Authorization,undefined);const payload=JSON.parse(options.body);assert.equal(payload.model,'qwen2.5:3b');assert.equal(payload.response_format.type,'json_schema');return new Response(JSON.stringify({choices:[{message:{content:JSON.stringify({concepts:[{name:'React',category:'technical',evidence:'React and SQL'}]})}}]}));});assert.equal(result.provider,'ollama');assert.equal(result.concepts[0].name,'React');
+ process.env.OLLAMA_BASE_URL='https://external.example.test';assert.throws(resumeSettings,/loopback/);delete process.env.OLLAMA_BASE_URL;process.env.OLLAMA_CV_MODEL='example:cloud';assert.throws(resumeSettings,/modelo local/);
+ }finally{process.env.CV_AI_PROVIDER=previous;delete process.env.OLLAMA_BASE_URL;delete process.env.OLLAMA_CV_MODEL;}
+});
 const document='Professional CV. I build applications with React and SQL. I completed a degree in computer science. Private note not to store: RAW-DOCUMENT-SENTINEL. Contact private@example.test.';
 const file={filename:'cv.txt',content:Buffer.from(document).toString('base64')};
 test('Lectura de TXT, DOCX y PDF; rechaza archivos inválidos y evidencia inventada',async()=>{
@@ -28,14 +34,14 @@ test('CV REST: consentimiento, IA, confirmación, aislamiento, afinidad y elimin
   assert.equal((await request('/auth/profile','PATCH',{skills:'React',resumeCompleted:true},cookie)).data.profile.resumeCompleted,undefined);
   assert.equal((await request('/jobs','GET',null,cookie)).status,428);
   assert.equal((await request('/auth/cv/analyze','POST',file,cookie)).status,400);assert.equal(calls,0);
-  const input={...file,acceptedTerms:true,acceptedProcessing:true,termsVersion:resumeTermsVersion};assert.equal((await request('/auth/cv/analyze','POST',input,cookie)).status,503);assert.equal(calls,0);
+  const input={...file,acceptedTerms:true,acceptedProcessing:true,termsVersion:resumeTermsVersion+':openai'};assert.equal((await request('/auth/cv/analyze','POST',input,cookie)).status,503);assert.equal(calls,0);
   process.env.OPENAI_API_KEY='test-key-not-a-real-secret';const draft=await request('/auth/cv/analyze','POST',input,cookie);assert.equal(draft.status,200);assert.equal(calls,1);assert.equal(draft.data.concepts.length,2);
   assert.equal((await request('/jobs','GET',null,cookie)).status,428);
   const other=await request('/auth/register','POST',{email:'other@example.test',password:'other-long-password'});assert.equal((await request('/auth/cv/confirm','POST',{selected:['1']},other.cookie)).status,409);
   assert.equal((await request('/auth/cv/confirm','POST',{selected:['invalid']},cookie)).status,400);
   const confirmed=await request('/auth/cv/confirm','POST',{selected:['1']},cookie);assert.equal(confirmed.status,200);assert.equal(confirmed.data.profile.skills,'React');assert.equal(confirmed.data.profile.resumeCompleted,true);
   const job=await request('/jobs','POST',{title:'Developer',company:'Fixture',description:'React SQL',skills:'React, SQL'},cookie);assert.equal(job.status,200);assert.equal((await request('/jobs/'+job.data.id+'/analysis','GET',null,cookie)).data.score,50);
-  const {database}=await import('./common.mjs');db=database('auth');const stored=JSON.stringify(db.prepare('SELECT profile FROM users WHERE id=?').get(registered.data.id));assert.ok(!stored.includes('RAW-DOCUMENT-SENTINEL'));assert.ok(!stored.includes('cv.txt'));assert.equal(db.prepare('SELECT version FROM resume_consents WHERE user=?').get(registered.data.id).version,resumeTermsVersion);assert.ok(readdirSync(process.env.DATA_DIRECTORY).every(name=>!name.endsWith('.txt')&&!name.endsWith('.pdf')));
+  const {database}=await import('./common.mjs');db=database('auth');const stored=JSON.stringify(db.prepare('SELECT profile FROM users WHERE id=?').get(registered.data.id));assert.ok(!stored.includes('RAW-DOCUMENT-SENTINEL'));assert.ok(!stored.includes('cv.txt'));assert.equal(db.prepare('SELECT version FROM resume_consents WHERE user=?').get(registered.data.id).version,resumeTermsVersion+':openai');assert.ok(readdirSync(process.env.DATA_DIRECTORY).every(name=>!name.endsWith('.txt')&&!name.endsWith('.pdf')));
   const removed=await request('/auth/cv','DELETE',null,cookie);assert.equal(removed.data.profile.resumeCompleted,false);assert.equal(removed.data.profile.skills,'');assert.equal(removed.data.profile.resume,undefined);assert.equal((await request('/jobs','GET',null,cookie)).status,428);
   db.prepare('UPDATE users SET profile=? WHERE id=?').run(JSON.stringify({name:'Admin',role:'admin'}),other.data.id);assert.equal((await request('/admin/overview','GET',null,other.cookie)).status,428);
  }finally{globalThis.fetch=originalFetch;delete process.env.OPENAI_API_KEY;await Promise.all(servers.map(s=>new Promise(resolve=>{s.closeAllConnections();s.close(resolve);})));db?.close();}

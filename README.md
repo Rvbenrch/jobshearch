@@ -6,7 +6,7 @@ Está construida con **React y varios servicios REST independientes en Node.js**
 
 ## Estado actual
 
-- Funciona en desarrollo local y tiene un servidor preparado para producción. El primer acceso exige analizar y confirmar un CV, también al administrador; necesita una clave privada de OpenAI configurada.
+- Funciona en desarrollo local y tiene un servidor preparado para producción. El primer acceso exige analizar y confirmar un CV, también al administrador; requiere Ollama con un modelo local descargado, o bien OpenAI si se selecciona expresamente.
 - Consulta portales públicos Greenhouse y Lever. Las fuentes iniciales son Stripe, Datadog y Canonical.
 - Adzuna está implementado y requiere claves propias; LinkedIn OIDC y SMTP también necesitan configuración.
 - El dashboard combina una muestra consultada de ofertas con una instantánea oficial documentada del INE.
@@ -251,11 +251,11 @@ El buscador permite combinar país, ciudad, puesto y empresa. En los portales co
 
 «Empresas» reúne las empresas de las fuentes conectadas y las ofertas guardadas, excluyendo la ficha ficticia del directorio. Permite abrir su contexto corporativo y buscar sus puestos. Cada oportunidad incluye descripción y enlace original, además de una ficha corporativa que distingue datos publicados y desconocidos. Las fichas de Canonical, Datadog y Stripe son resúmenes de fuentes oficiales fechadas; las empresas nuevas requieren incorporar fuentes contrastadas. No se garantiza información absoluta ni actualización automática de estas fichas. La consulta de la empresa y la oferta se resuelve por separado para conservar la información disponible si una fuente falla.
 
-## Currículum obligatorio y análisis de IA
+## Currículum obligatorio y análisis de IA local o externo
 
-Al acceder por primera vez, tanto usuarios como administradores deben subir su CV, aceptar las condiciones y autorizar expresamente su análisis por OpenAI. Se admiten PDF con texto (hasta 30 páginas), DOCX y TXT UTF-8, hasta 5 MB y 40.000 caracteres. No se realiza OCR: un PDF escaneado o protegido puede necesitar conversión.
+Al acceder por primera vez, tanto usuarios como administradores deben subir su CV, aceptar las condiciones y autorizar expresamente el tratamiento por el proveedor seleccionado. Se admiten PDF con texto (hasta 30 páginas), DOCX y TXT UTF-8, hasta 5 MB y 40.000 caracteres. No se realiza OCR: un PDF escaneado o protegido puede necesitar conversión.
 
-El servicio de autenticación procesa el archivo en memoria. Envía el texto al endpoint Chat Completions de OpenAI con salida JSON estructurada y almacenamiento de respuesta desactivado. Se ocultan patrones de correo y teléfono; esto no constituye anonimización. No se guardan el archivo ni el texto completo. La clave nunca sale del servidor.
+El servicio de autenticación procesa el archivo en memoria. Por defecto envía el texto a Ollama local mediante un endpoint compatible con Chat Completions y salida JSON estructurada; OpenAI es una alternativa opcional. Se ocultan patrones de correo y teléfono; esto no constituye anonimización. No se guardan el archivo ni el texto completo. La clave nunca sale del servidor.
 
 La IA propone conceptos técnicos, herramientas, métodos, idiomas y formación con una evidencia literal. Se descartan evidencias que no aparecen en el texto. El usuario revisa y selecciona los conceptos; solo después se actualizan sus competencias. La afinidad posterior continúa siendo una comparación explicable con los requisitos del puesto, no una predicción de contratación ni una evaluación de personalidad. Las competencias pueden corregirse después en Mi cuenta.
 
@@ -263,7 +263,7 @@ Se guardan conceptos y evidencias breves, modelo, fechas, versión de condicione
 
 La API bloquea los datos de la aplicación con HTTP 428 hasta confirmar el CV. Cambiar resumeCompleted desde el cliente no permite saltarse el flujo. Los análisis se limitan a cinco por usuario y hora y uno en curso.
 
-Configuración privada en .env (no usar variables VITE_):
+Configuración opcional de OpenAI en .env, solo si seleccionas CV_AI_PROVIDER=openai (no usar variables VITE_):
 
 ```dotenv
 OPENAI_API_KEY=TU_CLAVE_PRIVADA
@@ -272,8 +272,32 @@ PRIVACY_CONTROLLER=Nombre del responsable del servicio
 PRIVACY_CONTACT=Contacto para privacidad
 ```
 
-Sin clave, el flujo muestra un estado pendiente y no simula IA. La API de OpenAI requiere acceso y saldo propios. Reinicia el servidor después de configurarla.
+En modo OpenAI se exige clave y saldo propios. En modo Ollama no se necesita una clave: se exige un servidor local y modelo descargado. Sin el proveedor disponible, el flujo muestra un estado pendiente y no simula IA. Reinicia el servidor después de configurarlo.
 
 Endpoints autenticados: GET /api/auth/cv/policy, POST /api/auth/cv/analyze, POST /api/auth/cv/confirm y DELETE /api/auth/cv.
 
 Las condiciones son un texto inicial para el proyecto educativo. La aceptación no exime de obligaciones legales: antes de publicar se debe completar la información del responsable, base jurídica, conservación, derechos y las condiciones del proveedor aplicables. Separar la lectura de condiciones y la autorización permite registrar ambas acciones de forma explícita. Consulta la [orientación de la AEPD sobre consentimiento e información](https://www.aepd.es/preguntas-frecuentes/2-tus-obligaciones-como-responsable-del-tratamiento/6-el-deber-de-informacion/FAQ-0248-sobre-si-el-usuario-tiene-que-dar-consentimiento-a-clausula-de-privacidad). OpenAI puede conservar registros de supervisión de abuso: store=false no implica retención cero; consulta sus [controles de datos](https://developers.openai.com/api/docs/guides/your-data).
+
+## Ollama: opción predeterminada sin coste por llamada
+
+La aplicación usa CV_AI_PROVIDER=ollama por defecto. El backend y las condiciones distinguen el procesamiento local de OpenAI; no hay cambio automático a una API de pago. Se conserva el análisis con evidencias y la confirmación del usuario. Ollama tiene un endpoint [compatible con OpenAI](https://docs.ollama.com/api/openai-compatibility).
+
+Instala [Ollama para Windows](https://ollama.com/download/windows), abre una nueva terminal y ejecuta:
+
+```powershell
+ollama pull qwen2.5:3b
+```
+
+El modelo ocupa aproximadamente 1,9 GB de descarga; necesita memoria y tiempo de cálculo. No hay tarifa por inferencia local, pero usa recursos y electricidad del ordenador. Si Ollama no está en ejecución, inicia su aplicación o ejecuta ollama serve. No necesitas registrarte en un servicio cloud ni añadir una clave.
+
+Configuración local, ya aplicada al .env ignorado del equipo:
+
+```dotenv
+CV_AI_PROVIDER=ollama
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_CV_MODEL=qwen2.5:3b
+```
+
+Reinicia TalentScope. La pantalla de CV comprueba que Ollama responde y el modelo está descargado; «Comprobar configuración» actualiza el estado. El timeout de análisis local es de tres minutos y puede ser insuficiente en equipos lentos. Reduce la longitud del CV o usa un modelo apropiado a tu hardware.
+
+El modo local solo acepta URL HTTP en loopback y rechaza etiquetas cloud. En producción requiere Ollama en el mismo entorno de red del servidor Node; no accede al Ollama de cada visitante. El Dockerfile actual no incluye Ollama. Las pruebas verifican el contrato mediante respuestas controladas, no la calidad del modelo real ni el hardware del usuario.

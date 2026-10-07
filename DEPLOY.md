@@ -75,3 +75,9 @@ Configura OPENAI_API_KEY como secreto del servidor y OPENAI_CV_MODEL (por defect
 También el administrador deberá completar el CV en su siguiente acceso. Sin clave el análisis no estará activado y no se podrá completar este paso. PDF/DOCX/TXT se procesan en memoria; instala las nuevas dependencias con npm.cmd ci al actualizar el repositorio.
 
 Antes de abrir el servicio a terceros, completa PRIVACY_CONTROLLER y PRIVACY_CONTACT y adapta las condiciones de tratamiento y conservación al despliegue real. El botón de aceptación no sustituye las obligaciones del responsable. Las pruebas usan una respuesta simulada de OpenAI; valida acceso, saldo y un CV de prueba sin datos personales en el despliegue configurado.
+
+## Alternativa local sin API de pago
+
+Ahora el proveedor predeterminado es Ollama. Instala Ollama y descarga qwen2.5:3b con ollama pull qwen2.5:3b. CV_AI_PROVIDER=ollama usa http://127.0.0.1:11434 y no requiere OPENAI_API_KEY. Reinicia TalentScope tras cambiar .env. Si eliges expresamente CV_AI_PROVIDER=openai se aplica la configuración de clave y facturación del apartado anterior.
+
+En un servidor remoto debes ejecutar Ollama junto al backend: localhost representa el servidor, no el ordenador del visitante. Un alojamiento web básico o el contenedor actual no incluye el modelo ni sus recursos; para desplegarlo necesita preparación adicional.
