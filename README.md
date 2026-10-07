@@ -1,311 +1,77 @@
-# TalentScope
+# Junior Scope
 
-Aplicación educativa de búsqueda de empleo, análisis de requisitos y seguimiento de candidaturas. Incluye un buscador de ofertas públicas, fichas de empresas, administración de usuarios, un dashboard de mercado y ejemplos interactivos de React.
+Comunidad para personas que empiezan su trayectoria profesional y empresas que quieren descubrir su potencial. Reúne perfiles de juniors, proyectos, investigaciones y oportunidades publicadas por las propias empresas.
 
-Está construida con **React y varios servicios REST independientes en Node.js**, con persistencia SQLite. Tras completar el perfil obligatorio de currículum, el buscador consulta ofertas reales; no es una lista de datos ficticios.
+Esta versión sustituye el flujo de TalentScope: **no requiere CV, no utiliza Ollama ni IA y no busca/importa ofertas de portales externos**. No crea perfiles ni ofertas ficticias. Los catálogos muestran estados vacíos hasta que sus miembros publiquen.
 
-## Estado actual
+## Experiencias y permisos
 
-- Funciona en desarrollo local y tiene un servidor preparado para producción. El primer acceso exige analizar y confirmar un CV, también al administrador; requiere Ollama con un modelo local descargado, o bien OpenAI si se selecciona expresamente.
-- Consulta portales públicos Greenhouse y Lever. Las fuentes iniciales son Stripe, Datadog y Canonical.
-- Adzuna está implementado y requiere claves propias; LinkedIn OIDC y SMTP también necesitan configuración.
-- El dashboard combina una muestra consultada de ofertas con una instantánea oficial documentada del INE.
-- No está publicada automáticamente en Internet. El Dockerfile está preparado pero no se ha construido una imagen Docker en este entorno.
-- La compilación y las pruebas REST están verificadas. La revisión visual automatizada del navegador no pudo completarse por restricciones del entorno.
+| Tipo | Funcionalidades |
+| --- | --- |
+| Junior | Crear su perfil, decidir su publicación, gestionar sus propios proyectos/investigaciones/aportaciones y consultar contenido publicado. |
+| Empresa | Presentar su empresa, descubrir juniors y gestionar exclusivamente sus propias ofertas. |
+| Administrador | Permiso independiente del tipo. Consultar cuentas e interacciones; no concede publicación como otro tipo ni edición de contenido ajeno. |
 
-## Finalidad educativa, investigación y originalidad
-
-Esta aplicación **no es un intento de plagio**, ni pretende suplantar a LinkedIn, a los proveedores de empleo o a las empresas mencionadas. Su finalidad es educativa y de investigación: demostrar cómo construir interfaces React, servicios REST, autenticación, persistencia y visualizaciones que ayuden a estudiar oportunidades laborales.
-
-Las marcas y contenidos de terceros pertenecen a sus titulares. Las ofertas conservan su fuente y enlace original; las fichas corporativas y estadísticas enlazan su procedencia. La imagen arquitectónica es un recurso generado decorativo, no la fotografía de una sede real. El fin educativo no sustituye el cumplimiento de licencias y condiciones de uso, ni supone una certificación legal de originalidad.
-
-La motivación inicial plantea la hipótesis **«quien no encuentra trabajo es porque no se lo propone»**. El proyecto permite investigar la relación entre búsqueda activa, formación y oportunidades, pero **no demuestra esa afirmación**. La contratación también depende de experiencia, ubicación, condiciones, accesibilidad, situación económica y decisiones empresariales. El volumen de anuncios no mide la voluntad individual ni prueba causalidad sobre el desempleo.
-
-## Cómo se ha construido
-
-1. Separación de cuentas, ofertas guardadas, análisis y correo en procesos distintos.
-2. Gateway REST que valida la sesión y coordina operaciones entre esos procesos.
-3. Contraseñas con scrypt, sesiones HttpOnly, roles y datos aislados por propietario.
-4. Interfaces React separadas para el espacio profesional, la cuenta y la administración.
-5. Servicio de búsqueda que consulta proveedores y normaliza sus respuestas.
-6. Procedencia, fecha de consulta y detección explicable de competencias y referencias educativas.
-7. Historial de interacciones y panel protegido de administración.
-8. Remodelación visual con buscador, tarjetas, filtros, pestañas, fichas corporativas y laboratorio React.
-9. Dashboard de mercado y servidor de producción que sirve la interfaz compilada y la API bajo el mismo origen.
-
-## Por qué es un multiservicio REST de Node.js
-
-Cada servicio es un proceso Node.js, escucha en un puerto independiente y atiende una responsabilidad concreta. Las comunicaciones utilizan HTTP y JSON. Guardar una oferta puede implicar consultar su fuente, persistirla, analizarla y preparar una notificación, sin mezclar todas esas tareas en un único manejador.
-
-Node.js permite compartir lenguaje con React y consultar APIs con `fetch`. REST ofrece métodos, rutas y estados HTTP explícitos. La separación facilita cambiar proveedores y probar funciones sin mezclar la búsqueda de empleo con contraseñas o SMTP.
-
-```mermaid
-flowchart LR
-    R[React] --> W[Vite o servidor web]
-    W --> G[Gateway REST]
-    G --> A[Auth y actividad]
-    G --> J[Ofertas personales]
-    G --> N[Análisis]
-    G --> M[Correo]
-    G --> D[Descubrimiento de empleo]
-    D --> F[Greenhouse / Lever / Adzuna]
-    A --> B1[(SQLite Auth)]
-    J --> B2[(SQLite Jobs)]
-    M --> B3[(SQLite Mail)]
-    D --> B4[(SQLite Sources)]
-```
-
-La versión actual ejecuta esos procesos en una misma máquina o contenedor. **No es una plataforma distribuida con orquestación o escalado independiente por host.** Los servicios internos escuchan en loopback y exigen una clave interna. Separarlos físicamente requeriría configuración de red, URLs de servicios y otra estrategia de persistencia.
-
-| Servicio | Puerto local | Responsabilidad |
-|---|---:|---|
-| Gateway | 4100 | Sesión, origen, límites de peticiones y coordinación |
-| Auth | 4101 | Cuentas, roles, perfiles, sesiones, OIDC y actividad |
-| Jobs | 4102 | Ofertas personales y estados de candidatura |
-| Analysis | 4103 | Coincidencia y explicación de competencias |
-| Mail | 4104 | SMTP e historial de entrega |
-| Discovery | 4105 | Fuentes externas, caché y mercado observado |
-| Vite | 5173 | Desarrollo de las interfaces |
-| Web de producción | `PORT`, por defecto 3000 | Interfaz compilada y proxy de `/api` |
-
-## Tecnologías utilizadas
-
-| Tecnología | Uso |
-|---|---|
-| Node.js 24, módulos ES y HTTP nativo | Servicios REST; no se usa Express |
-| React 19 y React DOM | Componentes, estado, efectos y renderizado |
-| Vite 7 | Desarrollo y compilación de tres entradas React |
-| CSS responsive y Lucide React | Diseño, componentes, iconos e interacciones |
-| SQLite con `node:sqlite` y WAL | Persistencia separada por servicio |
-| `node:crypto` | scrypt, sales, tokens aleatorios y hashes de sesión |
-| JOSE | Validación criptográfica de tokens OIDC |
-| Nodemailer | Envío SMTP con TLS |
-| `node:test` y `assert` | Pruebas de lógica y flujos REST |
-| Dockerfile y servidor Node de producción | Preparación del despliegue completo |
-
-SQLite puede emitir un aviso experimental en la versión de Node utilizada. No se usa IA generativa para investigar cualquier empresa ni un modelo predictivo de contratación.
+El registro permite seleccionar Junior/Empresa. Las cuentas anteriores conservan contraseña, identificador, datos y rol; eligen su tipo en el siguiente acceso. El tipo elegido no se cambia desde el cliente. Los datos antiguos no se convierten automáticamente en contenido público.
 
 ## Funcionalidades
 
-### Buscar ofertas reales
+**Perfil junior:** nombre, presentación, descripción personal, estudios, titulaciones, FP, idiomas, competencias, prácticas, qué aporta, ubicación, disponibilidad y portfolio. Sin exigir años de experiencia. El perfil solo aparece en el directorio tras activar expresamente su publicación. Correo de acceso, contraseña, rol y datos de CV antiguos quedan fuera de las fichas públicas.
 
-- Palabras del puesto/descripción y ubicación; filtros por empresa conectada.
-- Adzuna como fuente alternativa, con búsqueda por país cuando se configuran sus claves.
-- Búsquedas rápidas, resultados paginados y estado explícito de cada fuente.
-- Caché de cinco minutos, máximo de 15 portales y hasta 2.000 anuncios por portal en una consulta.
-- Deduplificación por enlace o identificador de origen.
-- Ficha por pestañas: puesto y requisitos, encaje personal y empresa/contacto.
-- Salarios estructurados cuando se publican; los predichos por el proveedor se identifican como estimaciones.
-- Guardado en el espacio personal sin duplicar la misma oferta externa.
-- Botón de candidatura que abre la web original; no presenta solicitudes automáticamente.
+**Comunidad:** publicaciones de proyecto, investigación o aportación con título, contenido y temas; borradores privados, publicación, búsqueda, edición y eliminación por su autor. Las publicaciones muestran su nombre a los miembros incluso si mantiene oculto su perfil. Esta versión no incluye comentarios, chat ni correo automático.
 
-Las fuentes iniciales son empresas internacionales y contienen puestos de varias ocupaciones. No representan todas las ofertas de España ni todo el sector tecnológico. Las búsquedas coinciden con el texto original, sin traducción semántica automática. Adzuna proporciona descripciones resumidas, señaladas como tales.
+**Ofertas propias:** título, descripción, salario con periodicidad, ubicación, modalidad, idiomas, grados, FP, prácticas/formación, competencias e imagen PNG/JPEG/WebP de hasta 500 KB. Se rechazan imágenes SVG y URLs externas. Borradores y ofertas cerradas solo se muestran a su propietario; las publicadas aparecen en el catálogo general. Límite de 200 entradas por cuenta y catálogo. No existe un campo de años de experiencia y se rechazan los campos de años conocidos; el texto libre no se modera automáticamente.
 
-### Empresas, sedes y contactos
+**Administración:** cuentas e interacciones recientes, accesible solo a administradores. El servidor conserva el historial anterior y registra altas, accesos, cambios de perfil y gestión de ofertas/aportaciones.
 
-Las fichas iniciales contienen actividad, web, direcciones documentadas, fecha de consulta y canales públicos. Se distingue una sede de un domicilio social o dirección de correspondencia.
+La API comprueba la propiedad usando la sesión. Enviar otro ownerId, nombre de autor o rol desde el navegador no concede permisos. Los perfiles y condiciones son declaraciones de sus autores. No hay puntuación de afinidad ni estimación de probabilidad de contratación.
 
-Datadog tiene teléfono y correo de consultas generales documentados; **no se presentan como contactos de selección**. Si no existe teléfono o correo contrastado, se indica la ausencia. Un botón `mailto:` abre el cliente de correo del usuario, no envía mensajes automáticamente. No se inventan números de empleados.
+## Arquitectura de multiservicios REST
 
-Los perfiles están documentados en `services/company-data.mjs`. No son una investigación automática universal: otras empresas pueden aparecer sin ficha contrastada.
+Frontend React con Vite en desarrollo y un servidor Node en producción. Tres procesos independientes se comunican mediante HTTP/JSON:
 
-Fuentes: [Stripe](https://stripe.com/about), [Datadog — contacto](https://www.datadoghq.com/about/contact/), [Canonical — actividad](https://canonical.com/company), [Canonical — direcciones](https://canonical.com/legal/companies).
+| Servicio | Puerto | Responsabilidad |
+| --- | --- | --- |
+| Gateway | 4100 | Sesión, control de origen, límite de peticiones y enrutamiento. |
+| Auth | 4101 | Registro, perfiles, directorio y administración. |
+| Community | 4106 | Ofertas y publicaciones persistentes; permisos de propietario. |
 
-### Cuenta, análisis y candidaturas
+Los servicios internos escuchan en 127.0.0.1 y requieren INTERNAL_SECRET. El gateway transmite identidad y tipo tras validar la sesión. Auth usa auth.sqlite y Community usa community.sqlite; los datos se guardan en data/ o DATA_DIRECTORY. El lanzador coordina procesos, sin prometer alta disponibilidad ni infraestructura distribuida.
 
-- Registro, inicio y cierre de sesión; contraseña mínima de 10 caracteres.
-- Perfil de competencias y Premium declarado por el usuario, no verificado por LinkedIn.
-- Coincidencia exacta de competencias normalizadas, con pesos iguales.
-- Detección de competencias importadas mediante vocabulario técnico: puede omitir requisitos o detectar menciones no obligatorias.
-- Extracción de frases sobre formación, conservando referencias a preferencias o experiencia equivalente.
-- Guardar, editar, buscar, filtrar y eliminar ofertas.
-- Estados guardada, solicitud enviada, entrevista y cerrada. Cambiarlos solo registra lo declarado por el usuario.
-- Solicitantes y plazas solo cuando el usuario aporta esos datos.
-
-La afinidad **no es una probabilidad de obtener el empleo**. Tampoco se calcula el salario medio por titulación: faltan datos representativos de experiencia, país y resultados. Los salarios mostrados pertenecen a una oferta o a una estimación identificada del proveedor, no son ingresos garantizados.
-
-### Correo y LinkedIn
-
-Al guardar/importar una oferta se prepara una notificación si está habilitada. También hay envío manual e historial. Sin SMTP, aparece como vista previa/no enviada; con SMTP se registra el resultado real. No existe cola duradera ni reintento automático.
-
-LinkedIn OAuth/OIDC es opcional y necesita una aplicación registrada. Verifica firma, issuer, audience, state, nonce y caducidad. No concede acceso al catálogo de empleo, solicitantes ni estado Premium. No usa scraping, cookies de LinkedIn ni su contraseña.
-
-El plugin LinkedIn disponible en esta conversación ofrece búsqueda de profesionales, no una herramienta de catálogo de empleos. Conectarlo al chat no entrega sus credenciales a nuestra aplicación ni amplía automáticamente los permisos OIDC.
-
-### Administración
-
-Usuarios paginados, búsqueda por nombre/correo, roles, fechas de alta y último acceso, métricas e historial por persona. Solo los administradores pueden consultar el panel o modificar fuentes; el servidor verifica el rol y no depende únicamente de ocultar botones.
-
-Se registran altas, accesos, visitas, búsquedas, cambios de perfil, operaciones de ofertas, análisis, notificaciones y modificaciones de fuentes. El registro empieza con la implantación del historial; no reconstruye actividad anterior. Las consultas automáticas de análisis también pueden generar eventos. Una sesión vigente no demuestra presencia en ese instante.
-
-No se devuelven contraseñas, hashes, sales, tokens o contenido de correos en la administración.
-
-### Ejemplos React
-
-Botón con estado, pestañas para ver/copiar código, selector de color, contador, selección múltiple, acordeón, modal y avisos. Funcionan con estado React y están identificados como demostraciones: no modifican candidaturas ni el perfil real.
-
-## Dashboard: situación laboral
-
-La pestaña **Mercado laboral** distingue:
-
-1. **Muestra consultada:** anuncios únicos de los portales, empresas, referencias a remoto, distribución por empresa/ubicación y menciones de competencias. Se consulta al actualizar, respetando la caché.
-2. **Contexto oficial nacional:** una instantánea de la EPA, segundo trimestre de 2026, consultada el 7 de octubre de 2026. No se actualiza automáticamente desde el INE.
-
-| Indicador oficial | Valor | Alcance |
-|---|---:|---|
-| Personas ocupadas | 22.779.000 | España, toda la economía |
-| Personas desempleadas | 2.495.300 | España, toda la economía |
-| Tasa de paro | 9,87 % | España, toda la economía |
-
-Fuente: [INE — EPA del segundo trimestre de 2026](https://www.ine.es/dyngs/Prensa/es/EPA2T26.htm). Para contexto sectorial, se enlaza el [informe de tendencias del SEPE](https://www.sepe.es/HomeSepe/que-es-observatorio/tendencias-del-empleo/Informes-Tendencias-del-Mercado-de-Trabajo.html).
-
-Las APIs no proporcionan candidatos únicos, por lo que esa magnitud figura como **no disponible**, no como cero. Un anuncio no equivale necesariamente a una plaza, y una persona puede solicitar varios puestos. Demanda empresarial, personas buscando empleo, solicitantes y desempleados son conceptos distintos. No se divide el paro nacional entre anuncios internacionales para producir una ratio engañosa.
-
-Estudiar causalidad o resultados de búsqueda requeriría seguimiento consentido de cohortes, resultados de selección y control de factores externos. El dashboard actual es descriptivo y no demuestra la hipótesis sobre la motivación individual.
+Tecnologías: Node 24+, HTTP y SQLite nativos, React 19, Vite 7, Lucide React y CSS responsive. Contraseñas con scrypt y sal aleatoria, tokens aleatorios guardados con SHA-256, cookie HttpOnly/SameSite=Lax y Secure en HTTPS. No necesita claves de IA ni APIs de empleo. Los archivos históricos del producto anterior pueden permanecer en el repositorio, pero no se ejecutan desde los lanzadores ni las entradas HTML actuales.
 
 ## Ejecutar en Windows
 
-Requiere Node.js 24 o superior e Internet para consultar las fuentes.
+Desde la carpeta del proyecto:
 
 ```powershell
-cd "C:\Users\Rubén\Documents\Codex\2026-10-07\c8\outputs\talent-scope"
-npm.cmd install
+npm.cmd ci
 npm.cmd run dev
 ```
 
-Abre `http://127.0.0.1:5173/` y deja la terminal abierta. Se aceptan los orígenes locales `localhost` y `127.0.0.1` en el mismo puerto. `npm.cmd` evita el bloqueo de `npm.ps1` sin cambiar la política de PowerShell.
+Abre http://127.0.0.1:5173/ y deja la terminal abierta. Si tenías la versión anterior ejecutándose, deténla con Ctrl+C y vuelve a iniciar. npm.cmd evita el bloqueo de npm.ps1 sin cambiar la política de PowerShell.
 
-Tras modificar el backend, pulsa Ctrl+C y vuelve a arrancarlo: Vite actualiza React, pero no reinicia los procesos REST.
+La configuración opcional está en .env; usa .env.example como referencia. PUBLIC_ORIGIN define el origen, INTERNAL_SECRET la autenticación interna, PORT_OFFSET los puertos y DATA_DIRECTORY la ruta privada. Si falta el secreto, el lanzador genera uno para sus procesos. Las variables antiguas de IA no se utilizan.
+
+## Validación
 
 ```powershell
-npm.cmd run build
 npm.cmd test
-npm.cmd audit --omit=dev
+npm.cmd run build
 ```
 
-Las pruebas cubren afinidad, orígenes, permisos, aislamiento, prevención de autoasignación de admin, ausencia de secretos, normalización, deduplicación, fuentes y mercado. Usan respuestas controladas para los proveedores y OpenAI. Incluyen lectura de PDF/DOCX/TXT, aceptación, bloqueo de primer acceso, selección de conceptos, aislamiento y eliminación del perfil del CV. La conectividad real de los tres portales iniciales se verifica por separado. No equivalen a validar una llamada real a OpenAI con saldo, SMTP, LinkedIn, Adzuna con claves o el alojamiento final.
+La prueba de integración usa bases temporales aisladas. Comprueba sesiones, elección y migración del tipo, conservación del administrador y datos anteriores, privacidad, ausencia de datos ficticios, borradores, publicación/cierre, propiedad de edición/eliminación, imágenes, formación, interacciones y rechazo de rutas antiguas. Comprueba el contenido escrito en SQLite; no modifica cuentas reales. También se han comprobado los formularios React por tipo y el contenido de la ficha de oferta mediante renderizado de componentes.
 
-## Configuración y credenciales
+Estas pruebas no equivalen a un despliegue público ni a una auditoría completa de seguridad o accesibilidad.
 
-Copia `.env.example` a `.env` y configura únicamente los servicios necesarios.
+## Privacidad y Git
 
-| Variable | Uso |
-|---|---|
-| `PUBLIC_ORIGIN` | Origen de la app; necesario en producción salvo URL externa del alojamiento |
-| `INTERNAL_SECRET` | Clave interna, generada al iniciar si falta |
-| `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` | API de Adzuna |
-| `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`, `LINKEDIN_REDIRECT_URI` | Identidad OIDC |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Correo real |
-| `DATA_DIRECTORY` | Carpeta persistente de SQLite |
-| `PORT` | Puerto público del servidor de producción |
+.env y .env.* salvo .env.example, data/, node_modules/ y dist/ están excluidos de Git. No publiques bases, sesiones, credenciales locales, documentos ni backups. Los datos personales antiguos se conservan en disco para evitar pérdidas, sin mostrarlos automáticamente en el directorio. Antes de un lanzamiento público define política de privacidad, condiciones, retención, moderación y backups acordes con el uso real.
 
-No expongas secretos como variables `VITE_`. El navegador no recibe claves de proveedores. El puerto SMTP 587 exige STARTTLS; 465 usa TLS directo. Configura exactamente el callback de LinkedIn para el origen final.
+## Finalidad educativa e investigación
 
-Para crear o restablecer un administrador:
+Proyecto educativo para estudiar APIs REST, separación de servicios, permisos por propietario e interfaces para talento junior. No pretende suplantar ni plagiar plataformas de empleo o la identidad de sus marcas. No implica afiliación con ellas.
 
-```powershell
-node services/bootstrap-admin.mjs TU_CORREO
-```
+La dificultad para encontrar empleo depende de formación, mercado, ubicación y otras circunstancias. Esta aplicación no demuestra que una persona desempleada no se esfuerce. Sus registros describen esta comunidad, no una medición representativa de oferta/demanda laboral ni una garantía de contratación.
 
-La contraseña aleatoria se guarda en `data/admin-access.txt` o en `DATA_DIRECTORY`, y en SQLite solo se almacena el hash. El comando invalida las sesiones anteriores. No lo repitas salvo que quieras cambiar esa contraseña. `.env`, bases de datos y archivo de acceso están excluidos de Git y de la imagen Docker.
-
-## API principal
-
-| Ruta | Función |
-|---|---|
-| `POST /api/auth/register`, `/login`, `/logout` | Cuenta y sesión bajo `/api/auth` |
-| `GET /api/auth/me`, `PATCH /api/auth/profile` | Perfil |
-| `GET /api/discover/search` | `q`, `location`, `company`, `provider`, `country`, `page` |
-| `GET /api/discover/offer?id=...` | Ficha del proveedor |
-| `POST /api/discover/import` | Guardar por identificador externo |
-| `GET/POST /api/discover/sources`, `DELETE /api/discover/sources/:id` | Fuentes; mutaciones solo admin |
-| `GET /api/companies/info?name=...` | Ficha corporativa documentada |
-| `GET /api/market/overview` | Mercado observado |
-| `GET/POST /api/jobs`, `GET/PATCH/DELETE /api/jobs/:id` | Ofertas propias |
-| `GET /api/jobs/:id/analysis`, `POST /api/jobs/:id/notify` | Análisis y correo |
-| `GET /api/mail/history` | Historial propio |
-| `GET /api/admin/overview` | Usuarios/actividad, solo admin |
-| `POST /api/activity` | Visita a una página permitida |
-
-## GitHub y despliegue
-
-Consulta [DEPLOY.md](DEPLOY.md) para subir y desplegar desde GitHub. GitHub Pages sirve archivos estáticos y no ejecuta esta arquitectura completa. El servidor de producción sirve `dist/` y la API en un origen; SQLite requiere persistencia y una sola instancia en esta configuración.
-
-Sites usa un entorno de ejecución distinto del servidor Node con procesos y SQLite local. Publicar allí la aplicación completa requeriría adaptar backend y almacenamiento; publicar únicamente la interfaz no sustituye esa adaptación.
-
-Antes de uso público amplio faltan verificación de email, recuperación de contraseña, política de privacidad, retención de actividad, backups consistentes, pruebas de carga, revisión visual/accesibilidad y seguridad. La guía prepara el despliegue, no certifica que ya se haya realizado.
-
-## Referencias técnicas
-
-- [Greenhouse Job Board API](https://docs.greenhouse.io/job-board.html)
-- [Lever Postings API](https://github.com/lever/postings-api)
-- [Adzuna API](https://developer.adzuna.com/)
-- [LinkedIn — permisos](https://learn.microsoft.com/en-us/linkedin/shared/authentication/getting-access)
-- [LinkedIn — OIDC](https://learn.microsoft.com/en-us/linkedin/consumer/integrations/self-serve/sign-in-with-linkedin-v2)
-
-### Filtro de país y símbolos de empresa
-
-El buscador permite combinar país, ciudad, puesto y empresa. En los portales conectados se reconocen países y ciudades a partir de la ubicación publicada; las ofertas remotas sin país explícito quedan disponibles en «Todos los países». Adzuna usa el país de su catálogo. Los iconos de las empresas representan su actividad (infraestructura, monitorización y pagos); no son logotipos oficiales.
-
-### Finalidad del directorio de empresas
-
-«Empresas» reúne las empresas de las fuentes conectadas y las ofertas guardadas, excluyendo la ficha ficticia del directorio. Permite abrir su contexto corporativo y buscar sus puestos. Cada oportunidad incluye descripción y enlace original, además de una ficha corporativa que distingue datos publicados y desconocidos. Las fichas de Canonical, Datadog y Stripe son resúmenes de fuentes oficiales fechadas; las empresas nuevas requieren incorporar fuentes contrastadas. No se garantiza información absoluta ni actualización automática de estas fichas. La consulta de la empresa y la oferta se resuelve por separado para conservar la información disponible si una fuente falla.
-
-## Currículum obligatorio y análisis de IA local o externo
-
-Al acceder por primera vez, tanto usuarios como administradores deben subir su CV, aceptar las condiciones y autorizar expresamente el tratamiento por el proveedor seleccionado. Se admiten PDF con texto (hasta 30 páginas), DOCX y TXT UTF-8, hasta 5 MB y 40.000 caracteres. No se realiza OCR: un PDF escaneado o protegido puede necesitar conversión.
-
-El servicio de autenticación procesa el archivo en memoria. Por defecto envía el texto a Ollama local mediante un endpoint compatible con Chat Completions y salida JSON estructurada; OpenAI es una alternativa opcional. Se ocultan patrones de correo y teléfono; esto no constituye anonimización. No se guardan el archivo ni el texto completo. La clave nunca sale del servidor.
-
-La IA propone conceptos técnicos, herramientas, métodos, idiomas y formación con una evidencia literal. Se descartan evidencias que no aparecen en el texto. El usuario revisa y selecciona los conceptos; solo después se actualizan sus competencias. La afinidad posterior continúa siendo una comparación explicable con los requisitos del puesto, no una predicción de contratación ni una evaluación de personalidad. Las competencias pueden corregirse después en Mi cuenta.
-
-Se guardan conceptos y evidencias breves, modelo, fechas, versión de condiciones y huella SHA-256 del archivo. El borrador caduca a los 30 minutos y se purga en el siguiente acceso a la cuenta. Se conservan registros de aceptación y eventos sin el CV. Mi cuenta permite actualizar el CV o eliminar los conceptos y su afinidad; tras eliminarlos se solicita de nuevo completar el perfil. No borra ofertas guardadas, backups existentes ni solicitudes ya enviadas al proveedor.
-
-La API solicita subir un CV antes del primer acceso a los datos (HTTP 428). Una vez recibido, permite navegar mientras el análisis sigue en segundo plano; la afinidad del nuevo perfil no se calcula hasta confirmar sus conceptos. Cambiar resumeCompleted desde el cliente no permite saltarse el flujo. Los análisis se limitan a cinco por usuario y hora y uno en curso.
-
-Configuración opcional de OpenAI en .env, solo si seleccionas CV_AI_PROVIDER=openai (no usar variables VITE_):
-
-```dotenv
-OPENAI_API_KEY=TU_CLAVE_PRIVADA
-OPENAI_CV_MODEL=gpt-4.1-mini
-PRIVACY_CONTROLLER=Nombre del responsable del servicio
-PRIVACY_CONTACT=Contacto para privacidad
-```
-
-En modo OpenAI se exige clave y saldo propios. En modo Ollama no se necesita una clave: se exige un servidor local y modelo descargado. Sin el proveedor disponible, el flujo muestra un estado pendiente y no simula IA. Reinicia el servidor después de configurarlo.
-
-Endpoints autenticados: GET /api/auth/cv/policy, POST /api/auth/cv/analyze, POST /api/auth/cv/confirm, GET /api/auth/cv/status y DELETE /api/auth/cv.
-
-Las condiciones son un texto inicial para el proyecto educativo. La aceptación no exime de obligaciones legales: antes de publicar se debe completar la información del responsable, base jurídica, conservación, derechos y las condiciones del proveedor aplicables. Separar la lectura de condiciones y la autorización permite registrar ambas acciones de forma explícita. Consulta la [orientación de la AEPD sobre consentimiento e información](https://www.aepd.es/preguntas-frecuentes/2-tus-obligaciones-como-responsable-del-tratamiento/6-el-deber-de-informacion/FAQ-0248-sobre-si-el-usuario-tiene-que-dar-consentimiento-a-clausula-de-privacidad). OpenAI puede conservar registros de supervisión de abuso: store=false no implica retención cero; consulta sus [controles de datos](https://developers.openai.com/api/docs/guides/your-data).
-
-## Ollama: opción predeterminada sin coste por llamada
-
-La aplicación usa CV_AI_PROVIDER=ollama por defecto. El backend y las condiciones distinguen el procesamiento local de OpenAI; no hay cambio automático a una API de pago. Se conserva el análisis con evidencias y la confirmación del usuario. Ollama tiene un endpoint [compatible con OpenAI](https://docs.ollama.com/api/openai-compatibility).
-
-Instala [Ollama para Windows](https://ollama.com/download/windows), abre una nueva terminal y ejecuta:
-
-```powershell
-ollama pull qwen2.5:3b
-```
-
-El modelo ocupa aproximadamente 1,9 GB de descarga; necesita memoria y tiempo de cálculo. No hay tarifa por inferencia local, pero usa recursos y electricidad del ordenador. Si Ollama no está en ejecución, inicia su aplicación o ejecuta ollama serve. No necesitas registrarte en un servicio cloud ni añadir una clave.
-
-Configuración local, ya aplicada al .env ignorado del equipo:
-
-```dotenv
-CV_AI_PROVIDER=ollama
-OLLAMA_BASE_URL=http://127.0.0.1:11434
-OLLAMA_CV_MODEL=qwen2.5:3b
-```
-
-Reinicia TalentScope. La pantalla de CV comprueba que Ollama responde y el modelo está descargado; «Comprobar configuración» actualiza el estado. El timeout de análisis local es de cinco minutos y puede ser insuficiente en equipos lentos. Reduce la longitud del CV o usa un modelo apropiado a tu hardware.
-
-El modo local solo acepta URL HTTP en loopback y rechaza etiquetas cloud. En producción requiere Ollama en el mismo entorno de red del servidor Node; no accede al Ollama de cada visitante. El Dockerfile actual no incluye Ollama. Las pruebas verifican el contrato mediante respuestas controladas, no la calidad del modelo real ni el hardware del usuario.
-
-Prueba local realizada el 7 de octubre de 2026: Ollama con qwen2.5:3b devolvió cinco conceptos con evidencias de un texto breve en aproximadamente 13 segundos. El modelo se ejecutaba en CPU. Esta prueba no garantiza el tiempo de un CV completo. La respuesta local se limita a 2.500 tokens y se solicitan hasta 20 conceptos para reducir la latencia.
-
-### Análisis de CV en segundo plano
-
-POST /api/auth/cv/analyze devuelve HTTP 202 después de validar y leer el archivo, sin esperar la respuesta de la IA. La interfaz redirige al inicio y consulta el estado cada cinco segundos mientras el trabajo está en curso. Se distinguen estados processing, ready, failed y confirmed. Al terminar ofrece revisar el perfil; no aplica conceptos sin confirmación. Cambiar de página, recargar o cerrar el navegador no cancela el trabajo del servidor.
-
-El texto del CV se conserva solo en memoria durante el trabajo. El estado se guarda en SQLite. Si el servidor se reinicia se marca el trabajo como fallido y se solicita subir el CV de nuevo; no hay reanudación automática ni una cola distribuida. Si se elimina el perfil durante un análisis, su resultado tardío no restaura los datos borrados. Los borradores listos caducan a los 30 minutos.
+Consulta DEPLOY.md para Git y alojamiento con backend y almacenamiento persistente.

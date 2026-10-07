@@ -5,7 +5,7 @@ import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 export const dataDirectory=process.env.DATA_DIRECTORY||fileURLToPath(new URL('../data/',import.meta.url));
 const offset=Number(process.env.PORT_OFFSET||0);
-export const ports={auth:4101+offset,jobs:4102+offset,analysis:4103+offset,mail:4104+offset,discovery:4105+offset};
+export const ports={auth:4101+offset,jobs:4102+offset,analysis:4103+offset,mail:4104+offset,discovery:4105+offset,community:4106+offset};
 export function database(name){mkdirSync(dataDirectory,{recursive:true});const db=new DatabaseSync(resolve(dataDirectory,name+'.sqlite'));db.exec('PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;');return db;}
 export function fail(message,status=400){throw Object.assign(new Error(message),{status});}
 export async function body(req,limit=100000){let out='';for await(const chunk of req){out+=chunk;if(Buffer.byteLength(out)>limit)fail('Petición demasiado grande',413);}try{return out?JSON.parse(out):{};}catch{fail('JSON no válido');}}

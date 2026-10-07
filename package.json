@@ -1,20 +1,15 @@
 {
-  "name": "talent-scope",
+  "name": "junior-scope",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "node services/launch.mjs",
     "build": "vite build",
-    "test": "node --test services/test.mjs services/admin-test.mjs services/discovery-test.mjs services/resume-test.mjs",
+    "test": "node --test services/community-test.mjs",
     "start": "node services/production.mjs"
   },
   "dependencies": {
-    "fast-xml-parser": "^5.11.2",
-    "fflate": "^0.8.3",
-    "jose": "^6.0.0",
     "lucide-react": "^0.468.0",
-    "nodemailer": "^10.0.15",
-    "pdfjs-dist": "^6.4.299",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "vite": "^7.0.0"

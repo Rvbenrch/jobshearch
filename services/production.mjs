@@ -5,7 +5,7 @@ process.env.PUBLIC_ORIGIN||=process.env.RENDER_EXTERNAL_URL;
 if(!process.env.PUBLIC_ORIGIN)throw new Error('Configura PUBLIC_ORIGIN con la URL pública del despliegue.');
 if(!existsSync('dist/index.html'))throw new Error('Ejecuta npm run build antes de npm start.');
 process.env.INTERNAL_SECRET||=randomBytes(48).toString('hex');
-const children=['auth','jobs','analysis','mail','discovery','gateway'].map(name=>spawn(process.execPath,['services/'+name+'.mjs'],{stdio:'inherit',env:process.env}));
+const children=['auth','community','gateway'].map(name=>spawn(process.execPath,['services/'+name+'.mjs'],{stdio:'inherit',env:process.env}));
 const gatewayPort=4100+Number(process.env.PORT_OFFSET||0);
 const root=resolve('dist');const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.svg':'image/svg+xml','.ico':'image/x-icon'};let stopping=false;
 export const server=http.createServer(async(req,res)=>{
@@ -17,6 +17,6 @@ export const server=http.createServer(async(req,res)=>{
   const path=resolve(root,'.'+decodeURIComponent(url.pathname==='/'?'/index.html':url.pathname));if(!path.startsWith(root+sep)||!existsSync(path)||!statSync(path).isFile()){res.writeHead(404);res.end('Página no encontrada');return;}
   res.writeHead(200,{'Content-Type':types[extname(path)]||'application/octet-stream','Cache-Control':path.includes(sep+'assets'+sep)?'public,max-age=31536000,immutable':'no-cache'});if(req.method==='HEAD')res.end();else createReadStream(path).pipe(res);
  }catch{if(!res.headersSent)res.writeHead(503);res.end('Servicio no disponible');}
-}).listen(Number(process.env.PORT||3000),process.env.HOST||'0.0.0.0',()=>console.log('TalentScope publicado por el servidor de producción.'));
+}).listen(Number(process.env.PORT||3000),process.env.HOST||'0.0.0.0',()=>console.log('Junior Scope publicado por el servidor de producción.'));
 function stop(code=0){if(stopping)return;stopping=true;for(const child of children)child.kill();server.close(()=>process.exit(code));setTimeout(()=>process.exit(code),3000).unref();}
 process.on('SIGINT',()=>stop());process.on('SIGTERM',()=>stop());for(const child of children){child.on('error',()=>stop(1));child.on('exit',()=>{if(!stopping)stop(1);});}
