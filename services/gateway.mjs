@@ -1,0 +1,17 @@
+import http from 'node:http';
+import {call,json,body,fail} from './common.mjs';
+function cookie(req){return req.headers.cookie?.split(';').map(x=>x.trim()).find(x=>x.startsWith('ts_session='))?.slice(11)||'';}
+const counts=new Map();
+http.createServer(async(req,res)=>{try{const url=new URL(req.url,'http://local'),p=url.pathname.replace(/^\/api/,'');const key=req.socket.remoteAddress,now=Date.now();let c=counts.get(key);if(!c||c.until<now)c={n:0,until:now+60000};c.n++;counts.set(key,c);if(c.n>150)fail('Demasiadas peticiones',429);if(req.method!=='GET'&&req.headers.origin&&req.headers.origin!==(process.env.PUBLIC_ORIGIN||'http://localhost:5173'))fail('Origen no permitido',403);
+const secure=(process.env.PUBLIC_ORIGIN||'').startsWith('https:')?'; Secure':'';
+if(['/auth/register','/auth/login'].includes(p)){if(req.method!=='POST')fail('Método no permitido',405);const r=await call('auth',p.replace('/auth',''),{method:'POST',body:JSON.stringify(await body(req)),headers:{'x-client-ip':key}});res.setHeader('Set-Cookie','ts_session='+r.token+'; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800'+secure);json(res,r.user);return;}
+if(p==='/auth/linkedin/callback'){await call('auth','/linkedin/callback'+url.search);res.writeHead(302,{Location:'/account.html?connected=1'});res.end();return;}
+const token=cookie(req),u=await call('auth','/me',{headers:{'x-session':token}}),headers={'x-session':token,'x-user':u.id};
+if(p==='/auth/logout'){if(req.method!=='POST')fail('Método no permitido',405);await call('auth','/logout',{headers});res.setHeader('Set-Cookie','ts_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0'+secure);json(res,{ok:true});return;}
+if(p==='/auth/me'){json(res,u);return;}
+if(p==='/auth/profile'||p==='/auth/linkedin/start'){json(res,await call('auth',p.replace('/auth',''),{method:req.method,headers,...(req.method==='PATCH'?{body:JSON.stringify(await body(req))}:{})}));return;}
+if(p==='/system'){json(res,{linkedin:!!process.env.LINKEDIN_CLIENT_ID,email:!!(process.env.SMTP_HOST&&process.env.SMTP_FROM),services:['Autenticación','Ofertas','Análisis','Correo'],mode:'Ofertas aportadas por el usuario'});return;}
+if(p==='/mail/history'){json(res,await call('mail','/history',{headers}));return;}
+if(/^\/jobs\/[a-z0-9-]+\/(analysis|notify)$/.test(p)){const job=await call('jobs',p.split('/').slice(0,3).join('/'),{headers});const analysis=await call('analysis','/analyze',{method:'POST',body:JSON.stringify({job,profile:u.profile})});if(p.endsWith('/analysis')){json(res,analysis);return;}if(req.method!=='POST')fail('Método no permitido',405);json(res,await call('mail','/send',{method:'POST',headers,body:JSON.stringify({to:u.email,job,analysis})}));return;}
+if(p==='/jobs'||/^\/jobs\/[a-z0-9-]+$/.test(p)){const r=await call('jobs',p,{method:req.method,headers,...(['POST','PATCH'].includes(req.method)?{body:JSON.stringify(await body(req))}:{})});if(req.method==='POST'&&u.profile.alerts){const analysis=await call('analysis','/analyze',{method:'POST',body:JSON.stringify({job:r,profile:u.profile})});try{r.notification=await call('mail','/send',{method:'POST',headers,body:JSON.stringify({to:u.email,job:r,analysis})});}catch{r.notification={status:'failed'};}}json(res,r);return;}fail('Ruta no encontrada',404);
+}catch(e){json(res,{error:e.status?e.message:'Servicio no disponible'},e.status||503);}}).listen(4100,'127.0.0.1',()=>console.log('API REST lista en 4100'));

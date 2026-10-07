@@ -1,0 +1,4 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {analyze} from './analysis.mjs';
+test('Afinidad compara competencias sin alterar la probabilidad',()=>{const a=analyze({skills:'React, SQL',company:'Ejemplo',description:'Puesto',applicants:100,vacancies:2},{skills:'React',premium:'yes'});assert.equal(a.score,50);assert.equal(a.competition,50);assert.equal(a.probability,null);assert.deepEqual(a.missing,['sql']);});
+test('No inventa una puntuación cuando faltan requisitos',()=>{assert.equal(analyze({skills:'',company:'Ejemplo',applicants:null,vacancies:null},{}).score,null);});
+test('Premium no cambia la afinidad',()=>{const j={skills:'React',company:'Ejemplo',applicants:10,vacancies:1};assert.equal(analyze(j,{skills:'React',premium:'yes'}).score,analyze(j,{skills:'React',premium:'no'}).score);});
