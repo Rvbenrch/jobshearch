@@ -2,8 +2,11 @@ import http from 'node:http';
 import {DatabaseSync} from 'node:sqlite';
 import {mkdirSync} from 'node:fs';
 import {resolve} from 'node:path';
-export const ports={auth:4101,jobs:4102,analysis:4103,mail:4104};
-export function database(name){mkdirSync(resolve('data'),{recursive:true});const db=new DatabaseSync(resolve('data',name+'.sqlite'));db.exec('PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;');return db;}
+import {fileURLToPath} from 'node:url';
+export const dataDirectory=process.env.DATA_DIRECTORY||fileURLToPath(new URL('../data/',import.meta.url));
+const offset=Number(process.env.PORT_OFFSET||0);
+export const ports={auth:4101+offset,jobs:4102+offset,analysis:4103+offset,mail:4104+offset,discovery:4105+offset};
+export function database(name){mkdirSync(dataDirectory,{recursive:true});const db=new DatabaseSync(resolve(dataDirectory,name+'.sqlite'));db.exec('PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;');return db;}
 export function fail(message,status=400){throw Object.assign(new Error(message),{status});}
 export async function body(req){let out='';for await(const chunk of req){out+=chunk;if(out.length>100000)fail('Petición demasiado grande',413);}try{return out?JSON.parse(out):{};}catch{fail('JSON no válido');}}
 export function json(res,data,status=200){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));}

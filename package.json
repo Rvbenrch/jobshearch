@@ -1,1 +1,22 @@
-{"name":"talent-scope","private":true,"type":"module","scripts":{"dev":"node services/launch.mjs","build":"vite build","test":"node --test services/test.mjs"},"dependencies":{"jose":"^6.0.0","lucide-react":"^0.468.0","nodemailer":"^10.0.15","react":"^19.0.0","react-dom":"^19.0.0","vite":"^7.0.0"},"engines":{"node":">=24"}}
+{
+  "name": "talent-scope",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node services/launch.mjs",
+    "build": "vite build",
+    "test": "node --test services/test.mjs services/admin-test.mjs services/discovery-test.mjs",
+    "start": "node services/production.mjs"
+  },
+  "dependencies": {
+    "jose": "^6.0.0",
+    "lucide-react": "^0.468.0",
+    "nodemailer": "^10.0.15",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "vite": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
