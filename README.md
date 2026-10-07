@@ -2,11 +2,11 @@
 
 Aplicación educativa de búsqueda de empleo, análisis de requisitos y seguimiento de candidaturas. Incluye un buscador de ofertas públicas, fichas de empresas, administración de usuarios, un dashboard de mercado y ejemplos interactivos de React.
 
-Está construida con **React y varios servicios REST independientes en Node.js**, con persistencia SQLite. La primera pantalla busca ofertas reales; no es una página publicitaria ni una lista de datos ficticios.
+Está construida con **React y varios servicios REST independientes en Node.js**, con persistencia SQLite. Tras completar el perfil obligatorio de currículum, el buscador consulta ofertas reales; no es una lista de datos ficticios.
 
 ## Estado actual
 
-- Funciona en desarrollo local y tiene un servidor preparado para producción.
+- Funciona en desarrollo local y tiene un servidor preparado para producción. El primer acceso exige analizar y confirmar un CV, también al administrador; necesita una clave privada de OpenAI configurada.
 - Consulta portales públicos Greenhouse y Lever. Las fuentes iniciales son Stripe, Datadog y Canonical.
 - Adzuna está implementado y requiere claves propias; LinkedIn OIDC y SMTP también necesitan configuración.
 - El dashboard combina una muestra consultada de ofertas con una instantánea oficial documentada del INE.
@@ -183,7 +183,7 @@ npm.cmd test
 npm.cmd audit --omit=dev
 ```
 
-Las pruebas cubren afinidad, orígenes, permisos, aislamiento, prevención de autoasignación de admin, ausencia de secretos, normalización, deduplicación, fuentes y mercado. Usan respuestas controladas para los proveedores. La conectividad real de los tres portales iniciales se verifica por separado. No equivalen a validar SMTP, LinkedIn, Adzuna con claves o el alojamiento final.
+Las pruebas cubren afinidad, orígenes, permisos, aislamiento, prevención de autoasignación de admin, ausencia de secretos, normalización, deduplicación, fuentes y mercado. Usan respuestas controladas para los proveedores y OpenAI. Incluyen lectura de PDF/DOCX/TXT, aceptación, bloqueo de primer acceso, selección de conceptos, aislamiento y eliminación del perfil del CV. La conectividad real de los tres portales iniciales se verifica por separado. No equivalen a validar una llamada real a OpenAI con saldo, SMTP, LinkedIn, Adzuna con claves o el alojamiento final.
 
 ## Configuración y credenciales
 
@@ -250,3 +250,30 @@ El buscador permite combinar país, ciudad, puesto y empresa. En los portales co
 ### Finalidad del directorio de empresas
 
 «Empresas» reúne las empresas de las fuentes conectadas y las ofertas guardadas, excluyendo la ficha ficticia del directorio. Permite abrir su contexto corporativo y buscar sus puestos. Cada oportunidad incluye descripción y enlace original, además de una ficha corporativa que distingue datos publicados y desconocidos. Las fichas de Canonical, Datadog y Stripe son resúmenes de fuentes oficiales fechadas; las empresas nuevas requieren incorporar fuentes contrastadas. No se garantiza información absoluta ni actualización automática de estas fichas. La consulta de la empresa y la oferta se resuelve por separado para conservar la información disponible si una fuente falla.
+
+## Currículum obligatorio y análisis de IA
+
+Al acceder por primera vez, tanto usuarios como administradores deben subir su CV, aceptar las condiciones y autorizar expresamente su análisis por OpenAI. Se admiten PDF con texto (hasta 30 páginas), DOCX y TXT UTF-8, hasta 5 MB y 40.000 caracteres. No se realiza OCR: un PDF escaneado o protegido puede necesitar conversión.
+
+El servicio de autenticación procesa el archivo en memoria. Envía el texto al endpoint Chat Completions de OpenAI con salida JSON estructurada y almacenamiento de respuesta desactivado. Se ocultan patrones de correo y teléfono; esto no constituye anonimización. No se guardan el archivo ni el texto completo. La clave nunca sale del servidor.
+
+La IA propone conceptos técnicos, herramientas, métodos, idiomas y formación con una evidencia literal. Se descartan evidencias que no aparecen en el texto. El usuario revisa y selecciona los conceptos; solo después se actualizan sus competencias. La afinidad posterior continúa siendo una comparación explicable con los requisitos del puesto, no una predicción de contratación ni una evaluación de personalidad. Las competencias pueden corregirse después en Mi cuenta.
+
+Se guardan conceptos y evidencias breves, modelo, fechas, versión de condiciones y huella SHA-256 del archivo. El borrador caduca a los 30 minutos y se purga en el siguiente acceso a la cuenta. Se conservan registros de aceptación y eventos sin el CV. Mi cuenta permite actualizar el CV o eliminar los conceptos y su afinidad; tras eliminarlos se solicita de nuevo completar el perfil. No borra ofertas guardadas, backups existentes ni solicitudes ya enviadas al proveedor.
+
+La API bloquea los datos de la aplicación con HTTP 428 hasta confirmar el CV. Cambiar resumeCompleted desde el cliente no permite saltarse el flujo. Los análisis se limitan a cinco por usuario y hora y uno en curso.
+
+Configuración privada en .env (no usar variables VITE_):
+
+```dotenv
+OPENAI_API_KEY=TU_CLAVE_PRIVADA
+OPENAI_CV_MODEL=gpt-4.1-mini
+PRIVACY_CONTROLLER=Nombre del responsable del servicio
+PRIVACY_CONTACT=Contacto para privacidad
+```
+
+Sin clave, el flujo muestra un estado pendiente y no simula IA. La API de OpenAI requiere acceso y saldo propios. Reinicia el servidor después de configurarla.
+
+Endpoints autenticados: GET /api/auth/cv/policy, POST /api/auth/cv/analyze, POST /api/auth/cv/confirm y DELETE /api/auth/cv.
+
+Las condiciones son un texto inicial para el proyecto educativo. La aceptación no exime de obligaciones legales: antes de publicar se debe completar la información del responsable, base jurídica, conservación, derechos y las condiciones del proveedor aplicables. Separar la lectura de condiciones y la autorización permite registrar ambas acciones de forma explícita. Consulta la [orientación de la AEPD sobre consentimiento e información](https://www.aepd.es/preguntas-frecuentes/2-tus-obligaciones-como-responsable-del-tratamiento/6-el-deber-de-informacion/FAQ-0248-sobre-si-el-usuario-tiene-que-dar-consentimiento-a-clausula-de-privacidad). OpenAI puede conservar registros de supervisión de abuso: store=false no implica retención cero; consulta sus [controles de datos](https://developers.openai.com/api/docs/guides/your-data).

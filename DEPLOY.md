@@ -67,3 +67,11 @@ Abre `http://localhost:3000`. Para publicar en Internet utiliza HTTPS mediante e
 Render puede desplegar automáticamente cada push a la rama conectada. Mantén el volumen y haz copias de seguridad coherentes de SQLite. El servicio tiene varias bases de datos; una copia del archivo principal mientras WAL está activo puede ser incompleta: utiliza las herramientas de backup de SQLite o detén el servicio para una copia consistente.
 
 Antes de un uso público amplio faltan verificación de email, recuperación de contraseña, retención configurable de actividad, revisión de privacidad y pruebas de carga. La versión actual es una aplicación educativa funcional, con un despliegue preparado, no una garantía de disponibilidad empresarial.
+
+## Activar el perfil obligatorio de currículum
+
+Configura OPENAI_API_KEY como secreto del servidor y OPENAI_CV_MODEL (por defecto gpt-4.1-mini). En desarrollo usa .env; en el alojamiento, las variables privadas del servicio. Nunca uses VITE_OPENAI_API_KEY ni subas la clave a Git. Después reinicia con npm.cmd run dev en Windows o reinicia el servicio de producción.
+
+También el administrador deberá completar el CV en su siguiente acceso. Sin clave el análisis no estará activado y no se podrá completar este paso. PDF/DOCX/TXT se procesan en memoria; instala las nuevas dependencias con npm.cmd ci al actualizar el repositorio.
+
+Antes de abrir el servicio a terceros, completa PRIVACY_CONTROLLER y PRIVACY_CONTACT y adapta las condiciones de tratamiento y conservación al despliegue real. El botón de aceptación no sustituye las obligaciones del responsable. Las pruebas usan una respuesta simulada de OpenAI; valida acceso, saldo y un CV de prueba sin datos personales en el despliegue configurado.

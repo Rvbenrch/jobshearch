@@ -9,11 +9,11 @@ test('Administración: permisos, historial y ausencia de secretos',async()=>{
   const oldArg=process.argv[1];process.argv[1]='analysis.mjs';servers.push((await import('./analysis.mjs')).server);process.argv[1]=oldArg;
   async function request(path,method='GET',data,cookie=''){const r=await fetch('http://127.0.0.1:4700/api'+path,{method,headers:{'Content-Type':'application/json',cookie,Origin:'http://127.0.0.1:5173'},...(data?{body:JSON.stringify(data)}:{})});return{status:r.status,data:await r.json(),cookie:r.headers.get('set-cookie')?.split(';')[0]};}
   assert.equal((await request('/admin/overview')).status,401);
-  const regular=await request('/auth/register','POST',{email:'member@example.test',password:'test-long-password',name:'Persona',role:'admin'});assert.equal(regular.status,200);assert.notEqual(regular.data.profile.role,'admin');
+  const regular=await request('/auth/register','POST',{email:'member@example.test',password:'test-long-password',name:'Persona',role:'admin'});assert.equal(regular.status,200);const {database}=await import('./common.mjs');db=database('auth');assert.equal((await request('/jobs','GET',null,regular.cookie)).status,428);db.prepare('UPDATE users SET profile=? WHERE id=?').run(JSON.stringify({...regular.data.profile,resumeCompleted:true}),regular.data.id);assert.notEqual(regular.data.profile.role,'admin');
   assert.equal((await request('/admin/overview','GET',null,regular.cookie)).status,403);
   await request('/auth/profile','PATCH',{name:'Persona',skills:'React',role:'admin'},regular.cookie);assert.equal((await request('/admin/overview','GET',null,regular.cookie)).status,403);
   const admin=await request('/auth/register','POST',{email:'admin@example.test',password:'another-long-password',name:'Admin'});
-  const {database}=await import('./common.mjs');db=database('auth');db.prepare('UPDATE users SET profile=? WHERE id=?').run(JSON.stringify({...admin.data.profile,role:'admin'}),admin.data.id);
+  db.prepare('UPDATE users SET profile=? WHERE id=?').run(JSON.stringify({...admin.data.profile,role:'admin',resumeCompleted:true}),admin.data.id);
   const offer=await request('/jobs','POST',{title:'QA offer',company:'Fixture',description:'Fixture',skills:'React'},regular.cookie);assert.equal(offer.status,200);
   await request('/jobs/'+offer.data.id+'/analysis','GET',null,regular.cookie);
   await request('/jobs/'+offer.data.id,'PATCH',{status:'applied'},regular.cookie);
