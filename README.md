@@ -246,3 +246,7 @@ Antes de uso público amplio faltan verificación de email, recuperación de con
 ### Filtro de país y símbolos de empresa
 
 El buscador permite combinar país, ciudad, puesto y empresa. En los portales conectados se reconocen países y ciudades a partir de la ubicación publicada; las ofertas remotas sin país explícito quedan disponibles en «Todos los países». Adzuna usa el país de su catálogo. Los iconos de las empresas representan su actividad (infraestructura, monitorización y pagos); no son logotipos oficiales.
+
+### Finalidad del directorio de empresas
+
+«Empresas» reúne las empresas de las fuentes conectadas y las ofertas guardadas, excluyendo la ficha ficticia del directorio. Permite abrir su contexto corporativo y buscar sus puestos. Cada oportunidad incluye descripción y enlace original, además de una ficha corporativa que distingue datos publicados y desconocidos. Las fichas de Canonical, Datadog y Stripe son resúmenes de fuentes oficiales fechadas; las empresas nuevas requieren incorporar fuentes contrastadas. No se garantiza información absoluta ni actualización automática de estas fichas. La consulta de la empresa y la oferta se resuelve por separado para conservar la información disponible si una fuente falla.
