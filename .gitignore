@@ -12,3 +12,5 @@ data/
 *.key
 backups/
 uploads/
+
+dist-demo/

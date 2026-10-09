@@ -1,5 +1,18 @@
 # Junior Scope
 
+## Demo visual gratuita en GitHub Pages
+
+La demo usa una entrada independiente (`demo.html` y `web/demo.jsx`) y ejemplos ficticios. Permite cambiar entre Junior, Empresa y Admin, buscar ofertas por país, explorar perfiles, publicar ejemplos, reaccionar/comentar y simular candidaturas, descartes, mensajes y moderación. No hay registro real ni contraseñas. Los cambios viven únicamente en memoria de la pestaña y desaparecen al recargar; no se envían a personas o servidores.
+
+```powershell
+npm.cmd run build:demo
+npm.cmd run preview:demo
+```
+
+El compilador crea `dist-demo`, con rutas `/jobshearch/`, sin copiar `public/` ni leer archivos `.env`. Solo se publican HTML, CSS y JavaScript inspeccionados. La aplicación real y sus servicios quedan independientes de esta demo.
+
+Para publicar: en GitHub, Settings → Pages → Source: GitHub Actions. El workflow `.github/workflows/pages.yml` compila y publica únicamente `dist-demo`. Se puede ejecutar desde Actions → Publicar demo visual → Run workflow. No requiere configurar claves propias. La dirección prevista tras un despliegue correcto es https://rvbenrch.github.io/jobshearch/; consultar Actions para confirmar que está publicada. El prototipo no contiene cifras reales del mercado laboral ni datos de usuarios.
+
 Comunidad para personas que empiezan su trayectoria profesional y empresas que quieren descubrir su potencial. Reúne perfiles de juniors, proyectos, investigaciones y oportunidades publicadas por las propias empresas.
 
 Esta versión sustituye el flujo de TalentScope: **no requiere CV, no utiliza Ollama ni IA y no busca/importa ofertas de portales externos**. No crea perfiles ni ofertas ficticias. Los catálogos muestran estados vacíos hasta que sus miembros publiquen.
