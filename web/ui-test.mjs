@@ -1,0 +1,27 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import React from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {build} from 'esbuild';
+import {mkdirSync} from 'node:fs';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);
+test('React: consentimiento, fotos, interacción, atribución y acceso administrativo',async()=>{
+ mkdirSync('node_modules/.cache',{recursive:true});
+ for(const [name,entry] of [['junior-ui','web/junior-app.jsx'],['social-ui','web/social.jsx'],['moderation-ui','web/moderation.jsx'],['hiring-ui','web/hiring.jsx']])await build({entryPoints:[entry],bundle:true,platform:'node',format:'cjs',outfile:'node_modules/.cache/'+name+'.cjs',external:['react','react-dom/client'],loader:{'.css':'empty','.png':'dataurl'}});
+ const ui=require('../node_modules/.cache/junior-ui.cjs'),social=require('../node_modules/.cache/social-ui.cjs'),moderation=require('../node_modules/.cache/moderation-ui.cjs'),render=(Component,props)=>renderToStaticMarkup(React.createElement(Component,props));
+ const user={id:'self',profile:{name:'Junior',accountType:'junior'}};
+ const hiring=require('../node_modules/.cache/hiring-ui.cjs');
+ const safe=render(hiring.SharedProfile,{profile:{name:'Candidato',studies:'Informática',skills:'<script>bad</script>',email:'never-expose@example.test',password:'never-expose-password',resume:'old CV'}});assert.ok(safe.includes('Informática'));assert.ok(safe.includes('&lt;script&gt;'));assert.ok(!safe.includes('never-expose'));assert.ok(!safe.includes('old CV'));
+ const actions=render(hiring.HiringActions,{offer:{id:'o',ownerId:'company',status:'published',companyName:'Empresa'},user,onOpen(){},onCandidates(){}});for(const label of ['Presentar mi candidatura','Escribir a la empresa','Descartar para mí'])assert.ok(actions.includes(label));assert.ok(actions.includes('solo afecta a tu lista'));
+ const ownerActions=render(hiring.HiringActions,{offer:{id:'o',ownerId:'self'},user:{...user,profile:{accountType:'company'}},onCandidates(){}});assert.ok(ownerActions.includes('Ver candidatos y mensajes'));
+ const profile=render(ui.Profile,{user,onSave(){}});assert.ok(profile.includes('Acepto compartir'));assert.ok(profile.includes('Formación profesional'));assert.ok(!profile.includes('type="file"'));
+ const dialog=render(social.PublishProfileDialog,{onClose(){},onContinue(){}});assert.ok(dialog.includes('solo será público'));assert.ok(dialog.includes('empresas y otros miembros'));assert.ok(dialog.includes('Revisar mi perfil'));
+ const picker=render(social.ImagePicker,{images:[],onChange(){}});assert.ok(picker.includes('type="file"'));assert.ok(picker.includes('image/png,image/jpeg,image/webp'));
+ const banner=render(social.BlockBanner,{restriction:{active:true,mode:'permanent',reason:'Mala conducta'}});assert.ok(banner.includes('Mala conducta'));assert.ok(banner.includes('Bloqueo permanente'));
+ const post={id:'p',ownerId:'other',authorName:'Autor',content:'Texto',images:[],status:'published',likes:2,dislikes:1,commentCount:0,repostCount:0};const details=render(social.SocialPostDetails,{post,user});for(const label of ['Me gusta','No me gusta','Republicar','Publicar comentario','Denunciar publicación'])assert.ok(details.includes(label),label);
+ const blocked=render(social.SocialPostDetails,{post,user:{...user,restriction:{active:true}}});assert.ok(!blocked.includes('Publicar comentario'));assert.ok(blocked.includes('disabled=""'));
+ const repost=render(social.SocialPostCard,{post:{...post,id:'r',originalId:'p',kind:'repost',title:'Original',originalAuthorName:'Autor original',originalUnavailable:true,authorName:'Republicador',createdAt:new Date().toISOString()},onOpen(){}});assert.ok(repost.includes('Autor original'));assert.ok(repost.includes('ya no es público'));
+ const denied=render(moderation.AdminPanel,{user});assert.ok(denied.includes('no tiene el permiso'));
+ const escaped=render(social.SocialPostCard,{post:{...post,title:'<script>alert(1)</script>',content:'<img src=x onerror=alert(1)>',tags:'',createdAt:new Date().toISOString()},onOpen(){}});assert.ok(!escaped.includes('<script>'));assert.ok(escaped.includes('&lt;script&gt;'));
+});

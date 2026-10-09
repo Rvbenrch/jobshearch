@@ -5,3 +5,12 @@ data
 .git
 work
 dist
+*.sqlite*
+*.db
+*.db-wal
+*.db-shm
+*.key
+*.pem
+backups
+uploads
+**/*-test.mjs

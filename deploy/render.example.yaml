@@ -1,0 +1,25 @@
+# Proposal only: creating this Blueprint incurs paid compute/disk charges.
+# Approve costs and complete CLOUD-PLAN.md launch gates before importing.
+services:
+  - type: web
+    name: junior-scope-pilot
+    runtime: docker
+    plan: 1c-2g
+    region: frankfurt
+    numInstances: 1
+    autoDeployTrigger: off
+    healthCheckPath: /health
+    dockerfilePath: ./Dockerfile
+    disk:
+      name: junior-data
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIRECTORY
+        value: /app/data
+      - key: PUBLIC_ORIGIN
+        sync: false
+      - key: INTERNAL_SECRET
+        generateValue: true

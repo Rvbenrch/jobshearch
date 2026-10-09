@@ -5,8 +5,10 @@
   "scripts": {
     "dev": "node services/launch.mjs",
     "build": "vite build",
-    "test": "node --test services/community-test.mjs",
-    "start": "node services/production.mjs"
+    "test": "node --test services/community-test.mjs services/hiring-test.mjs web/ui-test.mjs scripts/security-test.mjs scripts/backup-test.mjs",
+    "start": "node services/production.mjs",
+    "check:security": "node scripts/security-check.mjs",
+    "test:production": "node --test services/production-test.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",

@@ -18,7 +18,7 @@ El registro permite seleccionar Junior/Empresa. Las cuentas anteriores conservan
 
 **Perfil junior:** nombre, presentación, descripción personal, estudios, titulaciones, FP, idiomas, competencias, prácticas, qué aporta, ubicación, disponibilidad y portfolio. Sin exigir años de experiencia. El perfil solo aparece en el directorio tras activar expresamente su publicación. Correo de acceso, contraseña, rol y datos de CV antiguos quedan fuera de las fichas públicas.
 
-**Comunidad:** publicaciones de proyecto, investigación o aportación con título, contenido y temas; borradores privados, publicación, búsqueda, edición y eliminación por su autor. Las publicaciones muestran su nombre a los miembros incluso si mantiene oculto su perfil. Esta versión no incluye comentarios, chat ni correo automático.
+**Comunidad:** publicaciones de proyecto, investigación o aportación con título, contenido y temas; borradores privados, publicación, búsqueda, edición y eliminación por su autor. Las publicaciones muestran su nombre a los miembros incluso si mantiene oculto su perfil. Incluye conversaciones con comentarios y fotos; no incluye chat privado ni correo automático.
 
 **Ofertas propias:** título, descripción, salario con periodicidad, ubicación, modalidad, idiomas, grados, FP, prácticas/formación, competencias e imagen PNG/JPEG/WebP de hasta 500 KB. Se rechazan imágenes SVG y URLs externas. Borradores y ofertas cerradas solo se muestran a su propietario; las publicadas aparecen en el catálogo general. Límite de 200 entradas por cuenta y catálogo. No existe un campo de años de experiencia y se rechazan los campos de años conocidos; el texto libre no se modera automáticamente.
 
@@ -75,3 +75,28 @@ Proyecto educativo para estudiar APIs REST, separación de servicios, permisos p
 La dificultad para encontrar empleo depende de formación, mercado, ubicación y otras circunstancias. Esta aplicación no demuestra que una persona desempleada no se esfuerce. Sus registros describen esta comunidad, no una medición representativa de oferta/demanda laboral ni una garantía de contratación.
 
 Consulta DEPLOY.md para Git y alojamiento con backend y almacenamiento persistente.
+
+## Imágenes, conversaciones y moderación
+
+Las publicaciones y comentarios admiten hasta cuatro imágenes PNG/JPEG/WebP de 500 KB cada una. Las reacciones permiten Me gusta o No me gusta, una por persona y publicación, con cambio o retirada; los contadores proceden de SQLite. Cualquier miembro puede comentar o republicar contenido publicado. Una republicación conserva autor y referencia al original; no copia su contenido a otro autor. Si se elimina u oculta el original, la republicación permanece con atribución y un aviso de contenido no disponible. Las republicaciones no se editan como si fueran el original y su propietario puede eliminarlas.
+
+Desde Descubrir juniors, Publicar mi perfil abre un aviso centrado con los campos visibles. Continuar solo abre el formulario de revisión; se publica al aceptar la opción y guardar. Se conserva el consentimiento y se puede ocultar el perfil. Empresas no reciben el botón de autopublicación junior.
+
+Administración permite revisar denuncias sobre personas o publicaciones, resolverlas o desestimarlas con motivo, bloquear temporal o permanentemente y desbloquear. Los usuarios bloqueados conservan lectura y denuncias, ven motivo y fecha de fin, y no pueden subir contenido, imágenes, comentarios, reacciones, republicaciones, ofertas ni cambios de perfil publicado. El temporal expira automáticamente. El historial conserva las acciones. El administrador puede alternar su propio espacio Junior/Empresa con un selector, conservando los campos de cada perfil por separado, sin entrar en cuentas ajenas ni cambiar sus permisos.
+
+La comunidad incluye comentarios en esta versión; no incluye chat privado ni notificaciones automáticas por correo. Consulta SECURITY.md para protecciones, comprobaciones y límites reales de seguridad.
+
+El plan de nube, el subdominio gratuito propuesto y la decisión pendiente de presupuesto están en CLOUD-PLAN.md. Es planificación: no hay recursos contratados ni publicación autorizada en ese documento.
+# Candidaturas y conversaciones privadas
+
+Desde una oferta publicada, un junior puede presentar su candidatura con consentimiento explícito, escribir a la empresa o descartar la oportunidad únicamente para su propia lista. En «Ofertas descartadas» puede recuperarla. Descartar no retira una candidatura ni cierra la oferta.
+
+«Mis candidaturas y mensajes» conserva las conversaciones del junior. «Candidatos y mensajes» y el botón de candidatos de cada oferta muestran a la empresa sus propios candidatos, fecha, estado y perfil profesional compartido al presentarse. Una conversación iniciada sin candidatura solo comparte el nombre y los mensajes. El perfil puede estar oculto en el directorio y compartirse expresamente con una empresa al aplicar. No se incluyen correo de acceso, credenciales, roles, otros espacios administrativos ni currículum antiguo.
+
+Hay una candidatura/conversación por junior y oferta. Estados: conversación iniciada, enviada, en revisión, preseleccionada, no seleccionada y retirada. La empresa cambia los estados de sus candidaturas activas. El junior puede retirar su candidatura: se elimina la copia del perfil; permanecen los mensajes privados. Puede volver a aplicar mientras la oferta esté publicada, aceptando de nuevo el consentimiento. Cerrar o eliminar la oferta impide nuevas candidaturas y conversaciones, pero conserva la lectura y respuesta de las conversaciones existentes.
+
+Los mensajes se guardan en SQLite y solo pueden leerlos sus dos participantes; ser administrador no permite leer conversaciones ajenas. Se presentan como texto escapado. Límites por usuario: veinte conversaciones nuevas al día, doscientas en total, cien mensajes al día y cuatro mil caracteres por mensaje. Los bloqueos impiden aplicar y enviar mensajes, conservando lectura, retirada y descartes personales. No se envían correos externos.
+
+Las bandejas consultan cambios cada veinte segundos y la conversación cada diez; no es chat por WebSocket. Las pruebas usan bases aisladas y comprueban consentimiento, duplicados, privacidad, propiedad, estados, bloqueos, retirada, cursores de mensajes y persistencia. Reinicia el proceso de desarrollo para activar los endpoints nuevos.
+
+La propuesta de alojamiento está en `deploy/render.example.yaml`. Es un ejemplo para revisión, no un despliegue ejecutado. Antes de importarlo hay que aprobar coste y completar `CLOUD-PLAN.md`.

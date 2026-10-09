@@ -4,3 +4,11 @@ data/
 .env
 .env.*
 !.env.example
+*.sqlite*
+*.db
+*.db-wal
+*.db-shm
+*.pem
+*.key
+backups/
+uploads/
