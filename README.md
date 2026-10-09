@@ -2,7 +2,7 @@
 
 ## Demo visual gratuita en GitHub Pages
 
-La demo usa una entrada independiente (`demo.html` y `web/demo.jsx`) y ejemplos ficticios. Permite cambiar entre Junior, Empresa y Admin, buscar ofertas por país, explorar perfiles, publicar ejemplos, reaccionar/comentar y simular candidaturas, descartes, mensajes y moderación. No hay registro real ni contraseñas. Los cambios viven únicamente en memoria de la pestaña y desaparecen al recargar; no se envían a personas o servidores.
+La demo usa una entrada independiente (`demo.html` y `web/demo.jsx`) y ejemplos ficticios. Permite cambiar entre Junior y Empresa, buscar ofertas por país, explorar perfiles, publicar ejemplos, reaccionar/comentar y simular candidaturas, descartes, mensajes. No hay registro real ni contraseñas. Los cambios viven únicamente en memoria de la pestaña y desaparecen al recargar; no se envían a personas o servidores.
 
 ```powershell
 npm.cmd run build:demo
